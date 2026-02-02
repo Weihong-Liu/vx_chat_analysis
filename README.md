@@ -1,5 +1,11 @@
 # We-ChatRoom Intelligence Agent (WIA)
 
+[![Python](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-555)](https://github.com/Weihong-Liu/vx_chat_analysis)
+[![Last Commit](https://img.shields.io/github/last-commit/Weihong-Liu/vx_chat_analysis)](https://github.com/Weihong-Liu/vx_chat_analysis/commits/main)
+[![Issues](https://img.shields.io/github/issues/Weihong-Liu/vx_chat_analysis)](https://github.com/Weihong-Liu/vx_chat_analysis/issues)
+[![Stars](https://img.shields.io/github/stars/Weihong-Liu/vx_chat_analysis?style=social)](https://github.com/Weihong-Liu/vx_chat_analysis)
+
 基于微信社群聊天记录的知识情报分析工具，提供清洗、主题聚合、关键词抽取、用户画像、链接整理、摘要与飞书发布等能力。
 
 - 需求说明见 [PRD.md](PRD.md)
@@ -22,7 +28,7 @@
 
 1) 准备聊天记录：
 
-使用 [WeFlow](https://github.com/hicccc77/WeFlow) 导出 JSON 格式记录，放入 [chat_data/](chat_data/) 目录。
+- 使用 [WeFlow](https://github.com/hicccc77/WeFlow) 导出 JSON 格式记录，放入 [chat_data/](chat_data/) 目录。
 
 2) 安装依赖（任选其一）：
 
@@ -37,37 +43,37 @@
 
 3) 配置环境变量（可选）：
 
-在项目根目录创建 [.env](.env) 文件（可参考 [.env.example](.env.example)），常用字段如下：
+    在项目根目录创建 [.env](.env) 文件（可参考 [.env.example](.env.example)），常用字段如下：
 
-```bash
-JINA_API_KEY=
-LLM_PROVIDER=
-LLM_API_KEY=
-LLM_BASE_URL=
-LLM_MODEL_NAME=
-WIA_KEYWORDS=
+    ```bash
+    JINA_API_KEY=
+    LLM_PROVIDER=
+    LLM_API_KEY=
+    LLM_BASE_URL=
+    LLM_MODEL_NAME=
+    WIA_KEYWORDS=
 
-# 飞书
-## 多维表格分享链接，需要设置编辑权限
-FEISHU_BASE_URL = ""
-## 飞书应用的 App ID 和 App Secret  https://open.feishu.cn/app/
-FEISHU_APP_ID = ""
-FEISHU_APP_SECRET = ""
-```
+    # 飞书
+    ## 多维表格分享链接，需要设置编辑权限
+    FEISHU_BASE_URL = ""
+    ## 飞书应用的 App ID 和 App Secret  https://open.feishu.cn/app/
+    FEISHU_APP_ID = ""
+    FEISHU_APP_SECRET = ""
+    ```
 
-字段说明可参考 [src/wia/config/settings.py](src/wia/config/settings.py)。
+    字段说明可参考 [src/wia/config/settings.py](src/wia/config/settings.py)。
 
 4) 运行分析：
 
-```bash
-uv run python main.py --input-dir chat_data --output-dir output
-```
+    ```bash
+    uv run python main.py --input-dir chat_data --output-dir output
+    ```
 
-如需发布到飞书：
+    如需发布到飞书：
 
-```bash
-uv run python main.py --input-dir chat_data --output-dir output --enable-feishu
-```
+    ```bash
+    uv run python main.py --input-dir chat_data --output-dir output --enable-feishu
+    ```
 
 ## 输出说明
 
@@ -150,3 +156,7 @@ uv run python main.py --input-dir chat_data --output-dir output --enable-feishu
 - [WeFlow](https://github.com/hicccc77/WeFlow)：微信聊天记录导出
 - [MiroThinker](https://github.com/MiroMindAI/MiroThinker)：参考 [apps/miroflow-agent](https://github.com/MiroMindAI/MiroThinker/tree/main/apps/miroflow-agent) 的结构与编码风格，采用可扩展的 Pipeline 设计
 - [Access_wechat_article](https://github.com/yeximm/Access_wechat_article)：微信推文 MCP 参考实现
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Weihong-Liu/vx_chat_analysis&type=date&legend=top-left)](https://www.star-history.com/#Weihong-Liu/vx_chat_analysis&type=date&legend=top-left)
