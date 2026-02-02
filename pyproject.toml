@@ -1,0 +1,27 @@
+[project]
+name = "wx-chat-analysis"
+version = "0.1.0"
+description = "WeChat Intelligence Agent (WIA)"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "miroflow-tools>=0.1.0",
+  "requests>=2.32.3",
+  "python-dotenv",
+  "mcp",
+  "fastmcp",
+  "requests-toolbelt>=1.0.0",
+  "lark-oapi>=1.5.2",
+  "anthropic>=0.40.0",
+  "openai>=1.0.0",
+  "json-repair>=0.55.1",
+  "scikit-learn>=1.8.0",
+  "numpy>=2.4.1",
+  "playwright>=1.57.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+miroflow-tools = { path = "./libs/miroflow-tools", editable = true }

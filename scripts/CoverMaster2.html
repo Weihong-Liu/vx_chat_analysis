@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cover Master Pro (Fixed Auto-Fit)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&family=Noto+Serif+SC:wght@700;900&family=ZCOOL+KuaiLe&family=ZCOOL+QingKe+HuangYou&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .bg-dot-pattern {
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .font-sans-sc { font-family: 'Noto Sans SC', sans-serif; }
+        .font-serif-sc { font-family: 'Noto Serif SC', serif; }
+        .font-happy { font-family: 'ZCOOL KuaiLe', cursive; }
+        .font-tall { font-family: 'ZCOOL QingKe HuangYou', sans-serif; }
+        .font-brush { font-family: 'Ma Shan Zheng', cursive; }
+
+        input[type="color"] { -webkit-appearance: none; border: none; width: 32px; height: 32px; padding: 0; overflow: hidden; border-radius: 50%; cursor: pointer; }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); }
+
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #2563eb; cursor: pointer; margin-top: -6px; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #e2e8f0; border-radius: 2px; }
+        input[type=range]:disabled::-webkit-slider-thumb { background: #cbd5e1; cursor: not-allowed; }
+        
+        .toggle-checkbox:checked { right: 0; border-color: #2563eb; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #2563eb; }
+
+        @keyframes blob {
+            0% { transform: translate(0px, 0px) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0px, 0px) scale(1); }
+        }
+        .animate-blob { animation: blob 7s infinite; }
+        .animation-delay-2000 { animation-delay: 2s; }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-hidden bg-gray-50 flex text-gray-800 font-sans-sc">
+
+    <!-- 左侧控制面板 -->
+    <aside class="w-[400px] flex-shrink-0 bg-white border-r border-gray-200 h-full flex flex-col shadow-xl z-20">
+        <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10">
+            <div class="flex items-center gap-2">
+                <div class="bg-black text-white p-1.5 rounded-lg"><i data-lucide="layout" class="w-5 h-5"></i></div>
+                <div>
+                    <h1 class="font-black text-xl tracking-tight leading-none">Cover<span class="text-blue-600">Master</span></h1>
+                    <p class="text-[10px] text-gray-400 font-medium">Auto-Fit Fixed</p>
+                </div>
+            </div>
+            <button onclick="app.download()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded-lg flex items-center gap-2 transition-transform active:scale-95">
+                <i data-lucide="download" class="w-4 h-4"></i> 下载
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto no-scrollbar p-6 space-y-8">
+            <section>
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1"><i data-lucide="type" class="w-3 h-3"></i> 文本内容</h3>
+                <div class="space-y-3">
+                    <input type="text" value="内行人才知道的潜规则" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all" oninput="app.updateState('title', this.value)">
+                    <textarea rows="2" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-600 focus:ring-2 focus:ring-blue-500 outline-none resize-none transition-all" oninput="app.updateState('subtitle', this.value)">含金量极高·建议收藏</textarea>
+                </div>
+            </section>
+
+            <section>
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1"><i data-lucide="palette" class="w-3 h-3"></i> 风格选择</h3>
+                <div class="grid grid-cols-3 gap-2"><div id="styleGrid" class="contents"></div></div>
+            </section>
+
+            <section class="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                <div class="flex justify-between items-center mb-4"><h3 class="text-xs font-bold text-gray-500">外观微调</h3><i data-lucide="sliders-horizontal" class="w-3 h-3 text-gray-400"></i></div>
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 mb-1">全局字体</label>
+                        <select onchange="app.updateState('fontFamily', this.value)" class="w-full text-xs bg-white border border-gray-200 rounded-md px-2 py-1.5 outline-none">
+                            <option value="font-sans-sc">思源黑体 (现代/通用)</option>
+                            <option value="font-serif-sc">思源宋体 (文艺/严肃)</option>
+                            <option value="font-tall">站酷黄油 (冲击/硬朗)</option>
+                            <option value="font-happy">站酷快乐 (可爱/手绘)</option>
+                            <option value="font-brush">马善政毛笔 (国潮/书法)</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <label class="text-[10px] font-bold text-gray-400">智能填充 (Auto-Fit)</label>
+                        <div class="relative inline-block w-10 h-5 align-middle select-none transition duration-200 ease-in">
+                            <input type="checkbox" name="toggle" id="autoFitToggle" checked class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-gray-300 transition-all duration-300 left-0" onchange="app.updateState('autoFit', this.checked)"/>
+                            <label for="autoFitToggle" class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-300 cursor-pointer transition-colors duration-300"></label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-[10px] text-gray-400 mb-1">
+                            <span>封面字号</span>
+                            <span id="fontSizeDisplay">Auto</span>
+                        </div>
+                        <input type="range" id="fontSizeSlider" min="40" max="250" value="80" disabled class="w-full transition-opacity opacity-50" oninput="app.updateState('fontSize', this.value)">
+                    </div>
+
+                    <div class="flex gap-4">
+                        <div class="flex-1">
+                            <label class="block text-[10px] font-bold text-gray-400 mb-1">背景色</label>
+                            <div class="flex items-center gap-2 bg-white rounded-lg p-1 border border-gray-200"><input type="color" id="bgColorPicker" oninput="app.updateState('bgColor', this.value)"><span class="text-xs text-gray-500">自定义</span></div>
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-[10px] font-bold text-gray-400 mb-1">文字色</label>
+                            <div class="flex items-center gap-2 bg-white rounded-lg p-1 border border-gray-200"><input type="color" id="textColorPicker" oninput="app.updateState('textColor', this.value)"><span class="text-xs text-gray-500">自定义</span></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                <h3 class="text-xs font-bold text-gray-500 mb-3 flex items-center gap-1"><i data-lucide="image" class="w-3 h-3"></i> 封面配图</h3>
+                <div class="flex gap-2 mb-3">
+                    <label class="flex-1 cursor-pointer bg-white border-2 border-dashed border-gray-300 rounded-lg h-20 flex flex-col items-center justify-center hover:border-blue-400 hover:bg-blue-50 transition-all group">
+                        <i data-lucide="upload-cloud" class="w-5 h-5 text-gray-400 group-hover:text-blue-500 mb-1"></i><span class="text-[10px] text-gray-400 font-medium">上传图片</span>
+                        <input type="file" class="hidden" accept="image/*" onchange="app.handleImageUpload(event)">
+                    </label>
+                    <button onclick="app.removeImage()" class="w-10 flex items-center justify-center bg-white border border-gray-200 rounded-lg text-red-400 hover:bg-red-50 hover:border-red-200 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+                <div>
+                     <div class="flex justify-between text-[10px] text-gray-400 mb-1"><span>图片遮罩浓度</span></div>
+                    <input type="range" min="0" max="90" value="30" class="w-full" oninput="app.updateState('overlayOpacity', this.value)">
+                </div>
+            </section>
+        </div>
+    </aside>
+
+    <main class="flex-1 h-full bg-gray-100 bg-dot-pattern flex flex-col items-center justify-center relative overflow-hidden p-8">
+        <div class="absolute top-6 bg-white/80 backdrop-blur px-4 py-2 rounded-full text-xs font-medium text-gray-500 shadow-sm border border-white/50">
+            预览区域 · 3:2 封面比例 (1800x1200)
+        </div>
+
+        <div id="preview-scale-wrapper" class="shadow-2xl rounded-sm transition-all duration-300 origin-center">
+            <div id="canvas-stage" class="relative overflow-hidden bg-white transition-colors duration-300" style="width: 900px; height: 600px;">
+                <div id="bg-image-layer" class="absolute inset-0 bg-cover bg-center z-0 transition-opacity duration-300"></div>
+                <div id="overlay-layer" class="absolute inset-0 bg-black/0 z-0 pointer-events-none transition-all duration-300"></div>
+                <div id="content-layer" class="relative z-10 w-full h-full flex flex-col">
+                    <!-- 内容渲染区 -->
+                </div>
+            </div>
+        </div>
+
+        <div class="absolute bottom-6 flex gap-2">
+            <button onclick="app.zoom(-0.1)" class="bg-white p-2 rounded-full shadow hover:bg-gray-50"><i data-lucide="minus" class="w-4 h-4"></i></button>
+            <button onclick="app.zoom(0.1)" class="bg-white p-2 rounded-full shadow hover:bg-gray-50"><i data-lucide="plus" class="w-4 h-4"></i></button>
+        </div>
+    </main>
+
+    <script>
+        const app = {
+            state: {
+                title: "内行人才知道的潜规则",
+                subtitle: "含金量极高·建议收藏",
+                style: 'sticker',
+                fontFamily: 'font-happy', // 贴纸风默认字体调整
+                fontSize: 80,
+                autoFit: true,
+                bgColor: '#fdf2f8',
+                textColor: '#db2777',
+                bgImage: null,
+                overlayOpacity: 40,
+                zoom: 0.8
+            },
+            autoFitTimer: null,
+
+            styles: {
+                // 修复：贴纸风现在有了明确的 max-height 和 overflow-hidden，确保自动填充生效
+                'sticker': { name: '🍭 贴纸风', bg: '#fdf2f8', text: '#db2777',
+                    render: (s) => `
+                        <div class="h-full w-full flex flex-col justify-center items-center p-12">
+                            <div class="bg-white border-8 border-pink-400 px-16 py-10 rounded-[3rem] shadow-[0_12px_0_0_#f472b6] transform rotate-1 text-center relative w-full max-w-[850px] max-h-[500px] flex flex-col items-center overflow-hidden">
+                                <div class="absolute -top-6 -left-6 text-7xl transform -rotate-12 z-20">✨</div>
+                                <div class="absolute -bottom-6 -right-6 text-7xl transform rotate-12 z-20">🎀</div>
+                                <!-- 容器限制了高度，overflow-hidden 让算法能检测到溢出 -->
+                                <div class="flex-1 w-full flex items-center justify-center overflow-hidden min-h-0">
+                                    <h1 class="auto-fit-target leading-[1.3] mb-2 break-words px-4" style="font-size: ${s.fontSize}px;">${s.title}</h1>
+                                </div>
+                                <div class="w-full h-2 bg-pink-100 my-4 rounded-full flex-shrink-0"></div>
+                                <span class="text-2xl font-bold text-gray-500 flex-shrink-0 pb-2">${s.subtitle}</span>
+                            </div>
+                        </div>` 
+                },
+                // 修复：手账感现在黄色背景绑定在 Title 外层 div 上，随文字缩放
+                'journal': { name: '📝 手账感', bg: '#fffdf5', text: '#1f2937',
+                    render: (s) => `
+                        <div class="absolute inset-0 opacity-20" style="background-image: linear-gradient(#d1d5db 2px, transparent 2px), linear-gradient(90deg, #d1d5db 2px, transparent 2px); background-size: 50px 50px;"></div>
+                        <div class="h-full w-full flex flex-col justify-center items-start pl-16 relative p-12">
+                            <div class="absolute top-8 right-8 bg-black text-white px-6 py-2 font-mono text-2xl transform rotate-2">VOL.2026</div>
+                            <!-- 容器改为 fit-content 允许背景跟随，同时设置 max-w 确保换行 -->
+                            <div class="relative w-fit max-w-[90%] max-h-[70%] flex items-center mb-4">
+                                <!-- 背景层 -->
+                                <div class="absolute inset-0 bg-yellow-200 transform -skew-x-3 rotate-1 opacity-60 rounded z-0 scale-105"></div>
+                                <!-- 文字层 -->
+                                <h1 class="auto-fit-target relative z-10 font-bold leading-[1.2] break-words" style="font-size: ${s.fontSize}px;">${s.title}</h1>
+                            </div>
+                            <div class="mt-4 flex gap-3 items-center ml-2 flex-shrink-0">
+                                <div class="w-6 h-6 rounded-full bg-red-500 border-2 border-black"></div>
+                                <p class="font-serif italic text-3xl border-b-2 border-gray-800 pb-1">${s.subtitle}</p>
+                            </div>
+                        </div>` 
+                },
+                'swiss': { name: '🇨🇭 瑞士国际', bg: '#EA3323', text: '#ffffff',
+                    render: (s) => `
+                         <div class="h-full w-full flex flex-col justify-between p-16 relative overflow-hidden">
+                             <div class="absolute top-0 right-1/3 w-px h-full bg-white/20"></div>
+                             <div class="absolute top-1/3 left-0 w-full h-px bg-white/20"></div>
+                             <div class="absolute top-8 right-8 w-24 h-24 rounded-full border-4 border-white opacity-40 flex items-center justify-center transform rotate-12">
+                                <i data-lucide="plus" class="w-12 h-12 text-white"></i>
+                             </div>
+                             <div class="bg-white text-[#EA3323] px-6 py-2 text-xl font-bold transform -rotate-1 skew-x-[-4deg] shadow-lg inline-flex w-fit max-w-full break-words">${s.subtitle}</div>
+                             <div class="relative z-10 mt-8 flex-1 flex flex-col items-start w-full pr-[10%] max-h-[70%] overflow-hidden gap-4">
+                                 <div class="w-full max-h-[78%] overflow-hidden flex items-start">
+                                     <h1 class="auto-fit-target font-black leading-[1.1] tracking-tighter text-left w-full break-words" style="font-size: ${s.fontSize}px;">${s.title}</h1>
+                                 </div>
+                             </div>
+                             <div class="relative z-10 flex justify-between items-end flex-shrink-0">
+                                 <div class="text-white/80 font-mono text-sm tracking-widest uppercase">International<br>Typographic Style</div>
+                                 <div class="text-7xl font-black opacity-10 leading-none">2026</div>
+                             </div>
+                         </div>`
+                },
+                'acid': { name: '💚 故障酸性', bg: '#000000', text: '#ccff00',
+                    render: (s) => `
+                        <div class="h-full w-full flex flex-col p-12 relative overflow-hidden">
+                            <div class="absolute inset-0 z-0 opacity-40" style="background-image: linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px); background-size: 60px 60px;"></div>
+                            <div class="relative z-10 flex justify-between items-center border-b-4 border-current pb-4 mb-4 flex-shrink-0">
+                                <span class="bg-[#ccff00] text-black px-3 py-1 font-mono font-bold text-lg">VOL.2026</span>
+                                <div class="flex gap-2"><div class="w-4 h-4 bg-[#ccff00]"></div><div class="w-4 h-4 border-2 border-[#ccff00]"></div></div>
+                            </div>
+                            <div class="flex-1 flex flex-col justify-center relative z-10 w-full overflow-hidden">
+                                 <h1 class="auto-fit-target leading-[0.9] font-black tracking-tighter uppercase break-words" style="font-size: ${s.fontSize}px; text-shadow: 4px 4px 0px #333;">${s.title}</h1>
+                            </div>
+                            <p class="text-2xl mt-6 border-l-8 border-[#ccff00] pl-6 text-white font-mono relative z-10 flex-shrink-0">${s.subtitle}</p>
+                            <div class="absolute -bottom-20 -right-20 w-80 h-80 border-[30px] border-[#ccff00] rounded-full opacity-20 z-0"></div>
+                        </div>`
+                },
+                'pop': { name: '🎨 波普撞色', bg: '#4F46E5', text: '#ffffff',
+                    render: (s) => `
+                        <div class="h-full w-full flex flex-col justify-center px-20 relative overflow-hidden">
+                            <div class="absolute top-1/2 right-[-100px] w-[500px] h-[500px] bg-[#FBBF24] rounded-full transform -translate-y-1/2 border-8 border-black z-0 shadow-xl"></div>
+                            <div class="relative z-10 w-full max-h-[80%] flex flex-col overflow-hidden">
+                                <div class="inline-block bg-black text-white px-6 py-2 text-2xl border-2 border-white shadow-[6px_6px_0_white] mb-6 transform -rotate-2 w-fit flex-shrink-0"># ${s.subtitle}</div>
+                                <div class="flex-1 w-full flex items-center overflow-hidden min-h-0">
+                                    <h1 class="auto-fit-target font-black leading-[1.1] drop-shadow-[8px_8px_0_#000] break-words" style="font-size: ${s.fontSize}px; -webkit-text-stroke: 3px black;">${s.title}</h1>
+                                </div>
+                            </div>
+                            <div class="absolute bottom-12 right-20 flex gap-6 z-20"><i data-lucide="star" class="w-20 h-20 text-white fill-current animate-pulse"></i></div>
+                        </div>`
+                },
+                'shock': { name: '⚡️ 冲击波', bg: '#FEF08A', text: '#000000',
+                    render: (s) => `
+                        <div class="h-full w-full flex flex-col justify-center items-center text-center relative p-12">
+                             <div class="absolute top-0 w-full h-12 bg-black pattern-diagonal-lines"></div>
+                             <div class="absolute bottom-0 w-full h-12 bg-black pattern-diagonal-lines"></div>
+                             <div class="bg-black text-yellow-300 px-8 py-2 text-3xl font-bold transform -rotate-1 mb-6 border-4 border-black shadow-[8px_8px_0_0_#fff] flex-shrink-0">WARNING</div>
+                            <div class="flex-1 w-full flex items-center justify-center max-h-[60%] overflow-hidden">
+                                <h1 class="auto-fit-target font-black leading-none uppercase drop-shadow-[4px_4px_0_rgba(255,255,255,0.8)] break-words" style="font-size: ${s.fontSize}px; -webkit-text-stroke: 3px black;">${s.title}</h1>
+                            </div>
+                            <div class="mt-6 px-10 py-3 bg-white border-4 border-black text-2xl font-bold shadow-[8px_8px_0_0_#000] transform rotate-1 flex-shrink-0">${s.subtitle}</div>
+                        </div>` 
+                },
+                'diffuse': { name: '🌈 弥散光', bg: '#e0e7ff', text: '#312e81',
+                    render: (s) => `
+                        <div class="absolute top-[-10%] left-[-10%] w-[60%] h-[80%] bg-purple-400 rounded-full mix-blend-multiply filter blur-[80px] opacity-70 animate-blob"></div>
+                        <div class="absolute bottom-[-10%] right-[-10%] w-[60%] h-[80%] bg-blue-400 rounded-full mix-blend-multiply filter blur-[80px] opacity-70 animate-blob animation-delay-2000"></div>
+                        <div class="h-full w-full flex flex-col justify-center items-center text-center relative z-10 p-12">
+                            <span class="text-xl tracking-[0.5em] uppercase opacity-70 mb-6 backdrop-blur-sm bg-white/30 inline-block px-4 py-1 rounded-full flex-shrink-0">${s.subtitle}</span>
+                            <div class="flex-1 w-full flex items-center justify-center max-h-[70%] overflow-hidden">
+                                <h1 class="auto-fit-target font-bold leading-tight tracking-tight drop-shadow-sm break-words" style="font-size: ${s.fontSize}px;">${s.title}</h1>
+                            </div>
+                        </div>` 
+                },
+                'cinema': { name: '🎬 电影感', bg: '#111827', text: '#ffffff',
+                    render: (s) => `
+                        <div class="h-full w-full flex flex-col justify-center items-center text-center relative py-12 p-12">
+                            <div class="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black to-transparent opacity-80"></div>
+                            <div class="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black to-transparent opacity-80"></div>
+                            <div class="relative z-10 tracking-[0.8em] text-sm uppercase opacity-70 mb-8 text-yellow-500 flex-shrink-0">The Cinematic Collection</div>
+                            <div class="flex-1 w-full flex items-center justify-center max-h-[60%] relative z-10 overflow-hidden">
+                                <h1 class="auto-fit-target font-serif font-black leading-[1.2] tracking-wide text-white drop-shadow-2xl break-words" style="font-size: ${s.fontSize}px;">${s.title}</h1>
+                            </div>
+                            <div class="relative z-10 mt-8 flex items-center gap-4 flex-shrink-0">
+                                <div class="h-[1px] w-20 bg-white/50"></div>
+                                <p class="text-xl opacity-90 font-light italic">${s.subtitle}</p>
+                                <div class="h-[1px] w-20 bg-white/50"></div>
+                            </div>
+                        </div>` 
+                },
+                'tech': { name: '🔵 科技蓝', bg: '#1e3a8a', text: '#ffffff',
+                    render: (s) => `
+                        <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(#60a5fa 2px, transparent 2px); background-size: 40px 40px;"></div>
+                        <div class="h-full w-full flex flex-col justify-center px-20 relative z-10 p-12">
+                            <div class="w-20 h-2 bg-blue-400 mb-8 flex-shrink-0"></div>
+                            <div class="flex-1 w-full max-h-[70%] flex items-center overflow-hidden">
+                                <h1 class="auto-fit-target font-sans font-bold leading-[1.2] mb-4 w-3/4 break-words" style="font-size: ${s.fontSize}px;">${s.title}</h1>
+                            </div>
+                            <div class="flex items-center gap-4 flex-shrink-0">
+                                <div class="bg-white/10 backdrop-blur border border-white/20 px-6 py-3 rounded text-blue-200 font-mono text-xl">>> ${s.subtitle}</div>
+                                <div class="h-px flex-1 bg-gradient-to-r from-blue-400/50 to-transparent"></div>
+                            </div>
+                             <div class="absolute top-12 right-12 w-40 h-40 border-t-4 border-r-4 border-blue-400 rounded-tr-3xl opacity-50"></div>
+                        </div>` 
+                },
+                'minimal': { name: '⚪️ 极简白', bg: '#ffffff', text: '#000000',
+                    render: (s) => `
+                        <div class="h-full w-full flex flex-col justify-center items-center text-center p-16 border-[20px] border-gray-100">
+                            <div class="flex-1 w-full flex items-center justify-center max-h-[80%] overflow-hidden">
+                                <h1 class="auto-fit-target font-light tracking-tighter leading-[1.2] break-words" style="font-size: ${s.fontSize}px;">${s.title}</h1>
+                            </div>
+                            <p class="text-gray-400 font-serif text-2xl tracking-[0.5em] uppercase flex-shrink-0 mt-8">${s.subtitle}</p>
+                        </div>` 
+                },
+                'memo': { name: '🟡 备忘录', bg: '#fefce8', text: '#a16207',
+                    render: (s) => `
+                        <div class="bg-white shadow-2xl h-[85%] w-[90%] mx-auto my-auto p-12 relative rounded-sm flex flex-col rotate-1 overflow-hidden">
+                             <div class="w-32 h-8 bg-red-200 opacity-60 absolute -top-4 left-1/2 -translate-x-1/2 transform -rotate-2 shadow-sm"></div>
+                             <div class="flex-1 pt-4 flex flex-col gap-6 overflow-hidden" style="background-image: linear-gradient(#e5e7eb 1px, transparent 1px); background-size: 100% 60px;">
+                                <div class="flex-1 w-full flex items-center overflow-hidden min-h-0 max-h-[70%]">
+                                    <h1 class="auto-fit-target font-bold leading-[1.4] text-gray-800 break-words w-full" style="font-size: ${s.fontSize}px;">${s.title}</h1>
+                                </div>
+                                <p class="text-3xl text-gray-500 font-handwriting pl-2 flex-shrink-0">- ${s.subtitle}</p>
+                             </div>
+                        </div>` 
+                },
+                'geek': { name: '🟢 极客黑', bg: '#000000', text: '#4ade80',
+                    render: (s) => `
+                        <div class="h-full w-full flex flex-col justify-center pl-20 font-mono relative overflow-hidden p-12">
+                            <div class="absolute right-20 top-20 text-xs opacity-50 text-right">SYSTEM_STATUS: ONLINE<br>MEMORY: 16TB<br>CPU: 128 CORES</div>
+                            <div class="flex-1 w-full flex items-center max-h-[70%] overflow-hidden">
+                                <h1 class="auto-fit-target font-bold leading-[1.2] mb-6 break-words w-full" style="font-size: ${s.fontSize}px; text-shadow: 4px 4px 0px #064e3b;">${s.title}_</h1>
+                            </div>
+                            <div class="border-l-4 border-green-500 pl-6 py-2 bg-green-900/10 w-full max-w-2xl flex-shrink-0">
+                                <span class="text-2xl opacity-80 text-green-300">Root@User: ${s.subtitle}</span>
+                            </div>
+                        </div>` 
+                },
+            },
+
+            init() {
+                this.renderStyleGrid();
+                this.updatePreview();
+                this.updateScale();
+                window.addEventListener('resize', () => this.updateScale());
+            },
+
+            renderStyleGrid() {
+                const container = document.getElementById('styleGrid');
+                container.innerHTML = Object.entries(this.styles).map(([key, style]) => `
+                    <button onclick="app.setStyle('${key}')" class="h-12 text-[11px] font-bold rounded-lg border flex items-center justify-center transition-all hover:scale-105 active:scale-95 ${this.state.style === key ? 'ring-2 ring-blue-500 border-transparent shadow-md' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}">${style.name}</button>
+                `).join('');
+            },
+
+            updateState(key, value) {
+                this.state[key] = value;
+                if(key==='bgColor') document.getElementById('bgColorPicker').value = value;
+                if(key==='textColor') document.getElementById('textColorPicker').value = value;
+                if(key==='fontSize') document.getElementById('fontSizeDisplay').textContent = value;
+                
+                if(key==='autoFit') {
+                    const slider = document.getElementById('fontSizeSlider');
+                    const display = document.getElementById('fontSizeDisplay');
+                    if(value) {
+                        slider.disabled = true;
+                        slider.classList.add('opacity-50');
+                        display.textContent = 'Auto';
+                    } else {
+                        slider.disabled = false;
+                        slider.classList.remove('opacity-50');
+                        display.textContent = this.state.fontSize;
+                    }
+                }
+                this.updatePreview();
+            },
+
+            setStyle(key) {
+                this.state.style = key;
+                const styleDef = this.styles[key];
+                this.state.bgColor = styleDef.bg;
+                this.state.textColor = styleDef.text;
+                // Auto change font for Sticker
+                if (key === 'sticker') this.state.fontFamily = 'font-happy';
+                
+                document.getElementById('bgColorPicker').value = styleDef.bg;
+                document.getElementById('textColorPicker').value = styleDef.text;
+                this.renderStyleGrid();
+                this.updatePreview();
+            },
+
+            // 核心算法：计算自动填充
+            calculateAutoFit() {
+                if (!this.state.autoFit) return;
+                
+                const target = document.querySelector('.auto-fit-target');
+                if (!target) return;
+                
+                const container = target.parentElement;
+                // 开始计算
+                let size = 250; 
+                const minSize = 20;
+                
+                // 暂时强制应用大小
+                target.style.fontSize = size + 'px';
+                target.style.width = 'auto';
+                
+                // 严谨检测：只要 scrollHeight > clientHeight (溢出) 就缩小
+                while (
+                    (target.scrollHeight > container.clientHeight || target.scrollWidth > container.clientWidth) 
+                    && size > minSize
+                ) {
+                    size -= 4; // 加快步进
+                    target.style.fontSize = size + 'px';
+                }
+            },
+
+            updatePreview() {
+                const { style, bgColor, textColor, fontFamily, bgImage, overlayOpacity } = this.state;
+                const stage = document.getElementById('canvas-stage');
+                const contentLayer = document.getElementById('content-layer');
+                const bgLayer = document.getElementById('bg-image-layer');
+                const overlayLayer = document.getElementById('overlay-layer');
+                
+                stage.style.backgroundColor = bgColor;
+                contentLayer.style.color = textColor;
+                contentLayer.className = `relative z-10 w-full h-full ${fontFamily}`;
+                contentLayer.innerHTML = this.styles[style].render(this.state);
+
+                if (bgImage) {
+                    bgLayer.style.backgroundImage = `url(${bgImage})`;
+                    bgLayer.style.opacity = 1;
+                    overlayLayer.style.backgroundColor = `rgba(0,0,0, ${overlayOpacity / 100})`;
+                } else {
+                    bgLayer.style.opacity = 0;
+                    overlayLayer.style.backgroundColor = 'transparent';
+                }
+                lucide.createIcons();
+                
+                // 渲染后执行自动填充计算
+                this.scheduleAutoFit();
+            },
+            
+            scheduleAutoFit() {
+                if (!this.state.autoFit) return;
+                if (this.autoFitTimer) {
+                    clearTimeout(this.autoFitTimer);
+                    this.autoFitTimer = null;
+                }
+                this.autoFitTimer = setTimeout(() => {
+                    requestAnimationFrame(() => {
+                        this.calculateAutoFit();
+                        if (document.fonts && document.fonts.ready) {
+                            document.fonts.ready.then(() => this.calculateAutoFit());
+                        }
+                    });
+                }, 0);
+            },
+
+            handleImageUpload(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => this.updateState('bgImage', e.target.result);
+                    reader.readAsDataURL(file);
+                }
+            },
+            
+            removeImage() {
+                this.updateState('bgImage', null);
+                document.querySelector('input[type="file"]').value = '';
+            },
+
+            zoom(delta) {
+                this.state.zoom = Math.max(0.3, Math.min(1.5, this.state.zoom + delta));
+                this.updateScale();
+            },
+
+            updateScale() {
+                const wrapper = document.getElementById('preview-scale-wrapper');
+                const mainWidth = document.querySelector('main').clientWidth;
+                const baseScale = Math.min(1, (mainWidth - 80) / 900);
+                wrapper.style.transform = `scale(${baseScale * (this.state.zoom === 0.8 ? 1 : this.state.zoom)})`;
+            },
+
+            async download() {
+                const stage = document.getElementById('canvas-stage');
+                const wrapper = document.getElementById('preview-scale-wrapper');
+                const originalTransform = wrapper.style.transform;
+                wrapper.style.transform = 'scale(1)'; 
+
+                try {
+                    const canvas = await html2canvas(stage, {
+                        scale: 2, 
+                        useCORS: true,
+                        allowTaint: true,
+                        backgroundColor: this.state.bgColor
+                    });
+                    const link = document.createElement('a');
+                    link.download = `cover_autofit_fixed_${Date.now()}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                } catch (err) {
+                    console.error(err);
+                    alert('生成失败');
+                } finally {
+                    wrapper.style.transform = originalTransform;
+                }
+            }
+        };
+
+        app.init();
+    </script>
+</body>
+</html>
