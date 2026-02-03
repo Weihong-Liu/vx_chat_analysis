@@ -74,7 +74,6 @@ Desktop.ini
 
 # dotenv
 .env
-.env.*
 
 # MyPy / type checking
 .mypy_cache/
